@@ -7,6 +7,7 @@ use lib "$Bin/../lib";
 use Getopt::Long qw(GetOptions GetOptionsFromArray);
 use Typo::Fossils;
 use Typo::Fossils::Counter qw(count_paths top_words);
+use Typo::Fossils::Detector qw(detect);
 
 binmode STDOUT, ':encoding(UTF-8)';
 binmode STDERR, ':encoding(UTF-8)';
@@ -15,10 +16,13 @@ my $usage = <<'USAGE';
 Usage:
   typo-fossils --version
   typo-fossils freq [--top N] [--min-count N] PATH...
+  typo-fossils scan [--top N] [--max-distance N] [--min-common N]
+                    [--max-typo N] [--min-ratio N] PATH...
 USAGE
 
-if (@ARGV && $ARGV[0] eq 'freq') {
-    shift @ARGV;
+my $command = (@ARGV && $ARGV[0] =~ /^(?:freq|scan)\z/) ? shift @ARGV : '';
+
+if ($command eq 'freq') {
     my ($top, $min_count) = (50, 1);
     GetOptionsFromArray(
         \@ARGV,
@@ -31,6 +35,40 @@ if (@ARGV && $ARGV[0] eq 'freq') {
     my @rows   = top_words($counts, limit => $top, min_count => $min_count);
 
     printf "%7d  %s\n", $_->[1], $_->[0] for @rows;
+    exit 0;
+}
+
+if ($command eq 'scan') {
+    my %opt = (top => 50, max_distance => 2, min_common => 5, max_typo => 3, min_ratio => 5);
+    GetOptionsFromArray(
+        \@ARGV,
+        'top=i'          => \$opt{top},
+        'max-distance=i' => \$opt{max_distance},
+        'min-common=i'   => \$opt{min_common},
+        'max-typo=i'     => \$opt{max_typo},
+        'min-ratio=i'    => \$opt{min_ratio},
+    ) or die $usage;
+    die $usage unless @ARGV;
+
+    my $counts = count_paths(@ARGV);
+    my @found  = detect(
+        $counts,
+        max_distance => $opt{max_distance},
+        min_common   => $opt{min_common},
+        max_typo     => $opt{max_typo},
+        min_ratio    => $opt{min_ratio},
+    );
+    splice @found, $opt{top} if $opt{top} < @found;
+
+    if (!@found) {
+        print "No typo candidates found.\n";
+        exit 0;
+    }
+
+    printf "%-6s  %-16s  %-16s  %5s  %7s\n", 'CONF', 'TYPO', 'FIX', 'SEEN', 'COMMON';
+    printf "%-6s  %-16s  %-16s  %5d  %7d\n",
+        @{$_}{qw(confidence typo correction typo_count correction_count)}
+        for @found;
     exit 0;
 }
 
