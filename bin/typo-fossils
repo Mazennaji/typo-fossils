@@ -8,7 +8,10 @@ use Getopt::Long qw(GetOptions GetOptionsFromArray);
 use Typo::Fossils;
 use Typo::Fossils::Counter qw(count_paths top_words);
 use Typo::Fossils::Detector qw(detect);
+use Typo::Fossils::Review qw(review);
+use Typo::Fossils::Store;
 
+binmode STDIN,  ':encoding(UTF-8)';
 binmode STDOUT, ':encoding(UTF-8)';
 binmode STDERR, ':encoding(UTF-8)';
 
@@ -18,9 +21,42 @@ Usage:
   typo-fossils freq [--top N] [--min-count N] PATH...
   typo-fossils scan [--top N] [--max-distance N] [--min-common N]
                     [--max-typo N] [--min-ratio N] PATH...
+  typo-fossils review [--store FILE] [scan options] PATH...
+  typo-fossils list [--store FILE]
 USAGE
 
-my $command = (@ARGV && $ARGV[0] =~ /^(?:freq|scan)\z/) ? shift @ARGV : '';
+sub parse_scan_options {
+    my ($with_store) = @_;
+    my %opt = (top => 50, max_distance => 2, min_common => 5, max_typo => 3, min_ratio => 5);
+    my @spec = (
+        'top=i'          => \$opt{top},
+        'max-distance=i' => \$opt{max_distance},
+        'min-common=i'   => \$opt{min_common},
+        'max-typo=i'     => \$opt{max_typo},
+        'min-ratio=i'    => \$opt{min_ratio},
+    );
+    push @spec, 'store=s' => \$opt{store} if $with_store;
+
+    GetOptionsFromArray(\@ARGV, @spec) or die $usage;
+    die $usage unless @ARGV;
+    return \%opt;
+}
+
+sub find_candidates {
+    my ($opt) = @_;
+    my $counts = count_paths(@ARGV);
+    my @found  = detect(
+        $counts,
+        max_distance => $opt->{max_distance},
+        min_common   => $opt->{min_common},
+        max_typo     => $opt->{max_typo},
+        min_ratio    => $opt->{min_ratio},
+    );
+    splice @found, $opt->{top} if $opt->{top} < @found;
+    return @found;
+}
+
+my $command = (@ARGV && $ARGV[0] =~ /^(?:freq|scan|review|list)\z/) ? shift @ARGV : '';
 
 if ($command eq 'freq') {
     my ($top, $min_count) = (50, 1);
@@ -39,26 +75,8 @@ if ($command eq 'freq') {
 }
 
 if ($command eq 'scan') {
-    my %opt = (top => 50, max_distance => 2, min_common => 5, max_typo => 3, min_ratio => 5);
-    GetOptionsFromArray(
-        \@ARGV,
-        'top=i'          => \$opt{top},
-        'max-distance=i' => \$opt{max_distance},
-        'min-common=i'   => \$opt{min_common},
-        'max-typo=i'     => \$opt{max_typo},
-        'min-ratio=i'    => \$opt{min_ratio},
-    ) or die $usage;
-    die $usage unless @ARGV;
-
-    my $counts = count_paths(@ARGV);
-    my @found  = detect(
-        $counts,
-        max_distance => $opt{max_distance},
-        min_common   => $opt{min_common},
-        max_typo     => $opt{max_typo},
-        min_ratio    => $opt{min_ratio},
-    );
-    splice @found, $opt{top} if $opt{top} < @found;
+    my $opt   = parse_scan_options(0);
+    my @found = find_candidates($opt);
 
     if (!@found) {
         print "No typo candidates found.\n";
@@ -69,6 +87,31 @@ if ($command eq 'scan') {
     printf "%-6s  %-16s  %-16s  %5d  %7d\n",
         @{$_}{qw(confidence typo correction typo_count correction_count)}
         for @found;
+    exit 0;
+}
+
+if ($command eq 'review') {
+    my $opt     = parse_scan_options(1);
+    my @found   = find_candidates($opt);
+    my $store   = Typo::Fossils::Store->new($opt->{store});
+    my $summary = review(\@found, $store);
+
+    printf "\nAccepted %d, rejected %d, skipped %d, left %d.\nDecisions are saved in %s\n",
+        @{$summary}{qw(accepted rejected skipped remaining)}, $store->path;
+    exit 0;
+}
+
+if ($command eq 'list') {
+    my $store_path;
+    GetOptionsFromArray(\@ARGV, 'store=s' => \$store_path) or die $usage;
+
+    my %accepted = Typo::Fossils::Store->new($store_path)->accepted;
+    if (!%accepted) {
+        print "No accepted typos yet.\n";
+        exit 0;
+    }
+
+    printf "%-20s -> %s\n", $_, $accepted{$_} for sort keys %accepted;
     exit 0;
 }
 
