@@ -1,0 +1,18 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use utf8;
+use FindBin qw($Bin);
+use lib "$Bin/../lib";
+use Getopt::Long qw(GetOptions);
+use Typo::Fossils;
+
+my $show_version = 0;
+GetOptions('version' => \$show_version) or die "Usage: typo-fossils [--version]\n";
+
+if ($show_version) {
+    print "typo-fossils ", Typo::Fossils->version, "\n";
+    exit 0;
+}
+
+print "Usage: typo-fossils [--version]\n";
