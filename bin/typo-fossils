@@ -4,15 +4,42 @@ use warnings;
 use utf8;
 use FindBin qw($Bin);
 use lib "$Bin/../lib";
-use Getopt::Long qw(GetOptions);
+use Getopt::Long qw(GetOptions GetOptionsFromArray);
 use Typo::Fossils;
+use Typo::Fossils::Counter qw(count_paths top_words);
+
+binmode STDOUT, ':encoding(UTF-8)';
+binmode STDERR, ':encoding(UTF-8)';
+
+my $usage = <<'USAGE';
+Usage:
+  typo-fossils --version
+  typo-fossils freq [--top N] [--min-count N] PATH...
+USAGE
+
+if (@ARGV && $ARGV[0] eq 'freq') {
+    shift @ARGV;
+    my ($top, $min_count) = (50, 1);
+    GetOptionsFromArray(
+        \@ARGV,
+        'top=i'       => \$top,
+        'min-count=i' => \$min_count,
+    ) or die $usage;
+    die $usage unless @ARGV;
+
+    my $counts = count_paths(@ARGV);
+    my @rows   = top_words($counts, limit => $top, min_count => $min_count);
+
+    printf "%7d  %s\n", $_->[1], $_->[0] for @rows;
+    exit 0;
+}
 
 my $show_version = 0;
-GetOptions('version' => \$show_version) or die "Usage: typo-fossils [--version]\n";
+GetOptions('version' => \$show_version) or die $usage;
 
 if ($show_version) {
     print "typo-fossils ", Typo::Fossils->version, "\n";
     exit 0;
 }
 
-print "Usage: typo-fossils [--version]\n";
+print $usage;
