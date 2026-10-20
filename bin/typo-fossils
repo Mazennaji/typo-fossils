@@ -8,6 +8,7 @@ use Getopt::Long qw(GetOptions GetOptionsFromArray);
 use Typo::Fossils;
 use Typo::Fossils::Counter qw(count_paths top_words);
 use Typo::Fossils::Detector qw(detect);
+use Typo::Fossils::Exporter qw(export_pairs supported_formats infer_format write_output);
 use Typo::Fossils::Review qw(review);
 use Typo::Fossils::Store;
 
@@ -23,6 +24,7 @@ Usage:
                     [--max-typo N] [--min-ratio N] PATH...
   typo-fossils review [--store FILE] [scan options] PATH...
   typo-fossils list [--store FILE]
+  typo-fossils export [--format espanso|vim|macos] [--out FILE] [--store FILE]
 USAGE
 
 sub parse_scan_options {
@@ -56,7 +58,7 @@ sub find_candidates {
     return @found;
 }
 
-my $command = (@ARGV && $ARGV[0] =~ /^(?:freq|scan|review|list)\z/) ? shift @ARGV : '';
+my $command = (@ARGV && $ARGV[0] =~ /^(?:freq|scan|review|list|export)\z/) ? shift @ARGV : '';
 
 if ($command eq 'freq') {
     my ($top, $min_count) = (50, 1);
@@ -112,6 +114,49 @@ if ($command eq 'list') {
     }
 
     printf "%-20s -> %s\n", $_, $accepted{$_} for sort keys %accepted;
+    exit 0;
+}
+
+if ($command eq 'export') {
+    my ($format, $out, $store_path);
+    GetOptionsFromArray(
+        \@ARGV,
+        'format=s' => \$format,
+        'out=s'    => \$out,
+        'store=s'  => \$store_path,
+    ) or die $usage;
+    die $usage if @ARGV;
+
+    $format = defined $format ? lc $format : infer_format($out);
+    die "Choose a format with --format (" . join(', ', supported_formats())
+        . ") or give --out a name ending in .yml, .vim, or .plist.\n"
+        unless defined $format;
+
+    my %pairs = Typo::Fossils::Store->new($store_path)->accepted;
+    if (!%pairs) {
+        print STDERR "No accepted typos yet. Run typo-fossils review first.\n";
+        exit 1;
+    }
+
+    my ($text, $skipped) = export_pairs($format, \%pairs);
+    my $written = keys(%pairs) - @$skipped;
+
+    printf STDERR "Skipped %d %s the %s format cannot hold: %s\n",
+        scalar(@$skipped), (@$skipped == 1 ? 'entry' : 'entries'), $format, join(', ', @$skipped)
+        if @$skipped;
+
+    if (!$written) {
+        print STDERR "Nothing to export.\n";
+        exit 1;
+    }
+
+    if (defined $out) {
+        write_output($out, $text);
+        printf "Wrote %d %s to %s (%s).\n", $written, ($written == 1 ? 'typo' : 'typos'), $out, $format;
+    }
+    else {
+        print $text;
+    }
     exit 0;
 }
 
