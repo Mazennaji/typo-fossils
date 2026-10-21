@@ -73,4 +73,19 @@ like($ordered[0]{confidence}, qr/^\d\.\d{3}$/, 'confidence has three decimals');
 
 is_deeply([ detect({}) ], [], 'empty table');
 
+is($by_typo{recieve}{kind}, 'gap', 'a transposed ie is a gap');
+is($by_typo{recieve}{reason}, 'ie/ei swap', 'with its reason');
+is($by_typo{seperate}{kind}, 'gap', 'a vowel swap is a gap');
+is($by_typo{helo}{kind}, 'gap', 'a missing double letter is a gap');
+is($teh->{kind}, 'slip', 'a plain swap is a slip');
+is($teh->{reason}, 'swapped letters', 'with its reason');
+
+my %layout_counts = (qat => 1, sat => 50);
+my ($qwerty_hit) = detect(\%layout_counts, min_common => 5, max_typo => 3, min_ratio => 5);
+is($qwerty_hit->{kind}, 'unclear', 'distant keys are unclear on qwerty');
+my ($azerty_hit) = detect(\%layout_counts, min_common => 5, max_typo => 3, min_ratio => 5, layout => 'azerty');
+is($azerty_hit->{kind}, 'slip', 'the same pair is a slip on azerty');
+eval { detect(\%layout_counts, layout => 'dvorak') };
+like($@, qr/Unknown layout 'dvorak'/, 'detect rejects an unknown layout');
+
 done_testing;
