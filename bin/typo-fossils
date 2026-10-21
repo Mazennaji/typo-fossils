@@ -9,6 +9,7 @@ use Typo::Fossils;
 use Typo::Fossils::Counter qw(count_paths top_words);
 use Typo::Fossils::Detector qw(detect);
 use Typo::Fossils::Exporter qw(export_pairs supported_formats infer_format write_output);
+use Typo::Fossils::Keyboard qw(supported_layouts);
 use Typo::Fossils::Review qw(review);
 use Typo::Fossils::Store;
 
@@ -20,27 +21,54 @@ my $usage = <<'USAGE';
 Usage:
   typo-fossils --version
   typo-fossils freq [--top N] [--min-count N] PATH...
-  typo-fossils scan [--top N] [--max-distance N] [--min-common N]
-                    [--max-typo N] [--min-ratio N] PATH...
+  typo-fossils scan [scan options] PATH...
   typo-fossils review [--store FILE] [scan options] PATH...
   typo-fossils list [--store FILE]
   typo-fossils export [--format espanso|vim|macos] [--out FILE] [--store FILE]
+
+Scan options:
+  --top N            show at most N candidates (default 50)
+  --max-distance N   largest edit distance to a correction (default 2)
+  --min-common N     times a correction must appear (default 5)
+  --max-typo N       times a typo may appear at most (default 3)
+  --min-ratio N      how many times more common the correction must be (default 5)
+  --kind KIND        slip, gap, unclear, or all (default all)
+  --layout NAME      qwerty, azerty, or qwertz (default qwerty)
 USAGE
 
 sub parse_scan_options {
     my ($with_store) = @_;
-    my %opt = (top => 50, max_distance => 2, min_common => 5, max_typo => 3, min_ratio => 5);
+    my %opt = (
+        top          => 50,
+        max_distance => 2,
+        min_common   => 5,
+        max_typo     => 3,
+        min_ratio    => 5,
+        kind         => 'all',
+        layout       => 'qwerty',
+    );
     my @spec = (
         'top=i'          => \$opt{top},
         'max-distance=i' => \$opt{max_distance},
         'min-common=i'   => \$opt{min_common},
         'max-typo=i'     => \$opt{max_typo},
         'min-ratio=i'    => \$opt{min_ratio},
+        'kind=s'         => \$opt{kind},
+        'layout=s'       => \$opt{layout},
     );
     push @spec, 'store=s' => \$opt{store} if $with_store;
 
     GetOptionsFromArray(\@ARGV, @spec) or die $usage;
     die $usage unless @ARGV;
+
+    $opt{kind}   = lc $opt{kind};
+    $opt{layout} = lc $opt{layout};
+
+    die "Unknown kind '$opt{kind}'. Choose slip, gap, unclear, or all.\n"
+        unless $opt{kind} =~ /\A(?:slip|gap|unclear|all)\z/;
+    die sprintf("Unknown layout '%s'. Choose one of: %s\n", $opt{layout}, join(', ', supported_layouts()))
+        unless grep { $_ eq $opt{layout} } supported_layouts();
+
     return \%opt;
 }
 
@@ -53,7 +81,9 @@ sub find_candidates {
         min_common   => $opt->{min_common},
         max_typo     => $opt->{max_typo},
         min_ratio    => $opt->{min_ratio},
+        layout       => $opt->{layout},
     );
+    @found = grep { $_->{kind} eq $opt->{kind} } @found unless $opt->{kind} eq 'all';
     splice @found, $opt->{top} if $opt->{top} < @found;
     return @found;
 }
@@ -85,9 +115,9 @@ if ($command eq 'scan') {
         exit 0;
     }
 
-    printf "%-6s  %-16s  %-16s  %5s  %7s\n", 'CONF', 'TYPO', 'FIX', 'SEEN', 'COMMON';
-    printf "%-6s  %-16s  %-16s  %5d  %7d\n",
-        @{$_}{qw(confidence typo correction typo_count correction_count)}
+    printf "%-6s  %-16s  %-16s  %5s  %7s  %s\n", 'CONF', 'TYPO', 'FIX', 'SEEN', 'COMMON', 'KIND';
+    printf "%-6s  %-16s  %-16s  %5d  %7d  %s (%s)\n",
+        @{$_}{qw(confidence typo correction typo_count correction_count kind reason)}
         for @found;
     exit 0;
 }
