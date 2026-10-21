@@ -42,6 +42,25 @@ close $tfh;
 my $scan = qx{$^X $script scan $typos};
 is($? >> 8, 0, 'scan exits cleanly');
 like($scan, qr/recieve\s+receive/, 'scan finds the typo');
+like($scan, qr/KIND/, 'scan prints a kind column');
+like($scan, qr/gap \(ie\/ei swap\)/, 'scan labels the typo');
+
+my $gaps = qx{$^X $script scan --kind gap $typos};
+like($gaps, qr/recieve/, 'scan --kind gap keeps gaps');
+
+my $slips = qx{$^X $script scan --kind slip $typos};
+like($slips, qr/No typo candidates found\./, 'scan --kind slip hides gaps');
+
+my $bad_kind = qx{$^X $script scan --kind bogus $typos 2>&1};
+isnt($? >> 8, 0, 'an unknown kind fails');
+like($bad_kind, qr/Unknown kind 'bogus'\. Choose slip, gap, unclear, or all\./, 'and explains the choices');
+
+my $bad_layout = qx{$^X $script scan --layout dvorak $typos 2>&1};
+isnt($? >> 8, 0, 'an unknown layout fails');
+like($bad_layout, qr/Unknown layout 'dvorak'\. Choose one of: azerty, qwerty, qwertz/, 'and lists the layouts');
+
+my $azerty = qx{$^X $script scan --layout AZERTY $typos};
+is($? >> 8, 0, 'a layout name works in any case');
 
 my $store = File::Spec->catfile($dir, 'decisions.json');
 my $answers = File::Spec->catfile($dir, 'answers.txt');
@@ -52,6 +71,7 @@ close $afh;
 my $review = qx{$^X $script review --store $store $typos < $answers};
 is($? >> 8, 0, 'review exits cleanly');
 like($review, qr/recieve -> receive/, 'review shows the candidate');
+like($review, qr/confidence \d\.\d{3}, gap \(ie\/ei swap\)/, 'review shows the kind');
 like($review, qr/Accepted 1, rejected 0, skipped 0, left 0\./, 'review prints a summary');
 ok(-f $store, 'review writes the decisions file');
 
