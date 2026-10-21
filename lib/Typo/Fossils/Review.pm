@@ -34,9 +34,11 @@ sub review {
         $position++;
         my ($typo, $fix) = @{$candidate}{qw(typo correction)};
 
-        printf {$out} "\n[%d/%d] %s -> %s   seen %d, common %d, confidence %s\n",
+        my $label = defined $candidate->{kind} ? ", $candidate->{kind} ($candidate->{reason})" : '';
+
+        printf {$out} "\n[%d/%d] %s -> %s   seen %d, common %d, confidence %s%s\n",
             $position, $total, $typo, $fix,
-            @{$candidate}{qw(typo_count correction_count confidence)};
+            @{$candidate}{qw(typo_count correction_count confidence)}, $label;
 
         while (1) {
             print {$out} "[a]ccept  [r]eject  [e]dit  [s]kip  [q]uit > ";
