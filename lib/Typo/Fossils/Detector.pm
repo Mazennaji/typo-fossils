@@ -6,28 +6,15 @@ use utf8;
 use Exporter 'import';
 use List::Util qw(max min);
 use Text::Levenshtein qw(distance);
+use Typo::Fossils::Keyboard qw(classify swap_index);
 
 our @EXPORT_OK = qw(detect edit_distance);
-
-sub is_transposition {
-    my ($x, $y) = @_;
-    return 0 if length($x) != length($y) || $x eq $y;
-
-    my $i = 0;
-    $i++ while substr($x, $i, 1) eq substr($y, $i, 1);
-
-    return 0 if $i + 1 >= length($x);
-    return 0 unless substr($x, $i, 1) eq substr($y, $i + 1, 1)
-                 && substr($x, $i + 1, 1) eq substr($y, $i, 1);
-
-    return substr($x, $i + 2) eq substr($y, $i + 2) ? 1 : 0;
-}
 
 sub edit_distance {
     my ($x, $y) = @_;
     my $d = distance($x, $y);
     return $d if $d <= 1;
-    return 1 if is_transposition($x, $y);
+    return 1 if swap_index($x, $y) >= 0;
     return $d;
 }
 
@@ -38,6 +25,7 @@ sub detect {
     my $max_typo     = $opt{max_typo}     // 3;
     my $min_ratio    = $opt{min_ratio}    // 5;
     my $min_length   = $opt{min_length}   // 3;
+    my $layout       = $opt{layout}       // 'qwerty';
 
     my %by_length;
     for my $word (keys %$counts) {
@@ -84,6 +72,7 @@ sub detect {
         my $similarity = 1 - $best->{distance} / max(length($typo), length($best->{correction}));
         my $dominance  = $best->{correction_count} / ($best->{correction_count} + $typo_count);
         $best->{confidence} = sprintf('%.3f', $similarity * $dominance);
+        @{$best}{qw(kind reason)} = classify($typo, $best->{correction}, $layout);
 
         push @found, $best;
     }
