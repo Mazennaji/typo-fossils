@@ -24,6 +24,7 @@ Most people misspell the same 20 to 30 words over and over. Built-in autocorrect
 - **Ranked, not guessed.** Every candidate gets a confidence score so you review the strongest ones first.
 - **Slips versus gaps.** A keyboard model tells a fumbled key from a spelling you do not know, so you can focus on the mistakes that repeat.
 - **You stay in control.** Nothing is exported until you accept it in the review step.
+- **Measurable progress.** Snapshots of your typo rate show whether the mistakes are fading, and which ones you have retired.
 - **Export anywhere.** One run produces snippets for the tools you already use.
 - **Local and private.** Your text never leaves your machine.
 
@@ -36,6 +37,7 @@ Most people misspell the same 20 to 30 words over and over. Built-in autocorrect
 5. **Classify.** Use the keyboard layout to label each candidate as a slip, a gap, or unclear.
 6. **Review.** Accept, reject, or edit each candidate. Decisions are saved as you go.
 7. **Export.** Write the accepted pairs in the format your tool expects.
+8. **Track.** Record how often you still make the accepted typos, and watch the rate fall.
 
 ## Quick start
 
@@ -144,13 +146,57 @@ typo-fossils export --format macos --out typos.plist
 
 **macOS.** Drag `typos.plist` into the Text Replacements list in System Settings, under Keyboard.
 
-## Planned usage
+### Track your progress
 
-The command below is the target design and is not implemented yet.
+Once you have accepted some typos, record how often you still make them. Each run saves a snapshot of your typo rate per 1,000 words, so you can see whether you are improving.
+
+```
+typo-fossils track ~/notes --since 2026-10-15
+```
+
+```
+Recorded 2026-10-22: 851 words, 1 typo (1.2 per 1,000 words).
+```
+
+| Option | Meaning | Default |
+| --- | --- | --- |
+| `--since DATE` | Only read files modified on or after this date (`YYYY-MM-DD`) | all files |
+| `--date DATE` | The date to record the snapshot under | today |
+| `--store FILE` | Where your accepted typos are kept | the default decisions file |
+| `--history FILE` | Where snapshots are kept | `~/.config/typo-fossils/history.json` |
+
+Only accepted typos are counted, so run `review` first. Use `--since` to measure your new writing rather than your whole archive, otherwise old typos in old notes keep counting. A file you edit is read in full, so typos in older parts of it can be counted again. Tracking the same date twice updates that day's snapshot instead of adding a second one. The history file lives in the folder named by `XDG_CONFIG_HOME` when it is set.
+
+### See your stats
 
 ```
 typo-fossils stats
 ```
+
+```
+Snapshots: 4 (2026-10-01 to 2026-10-22)
+Words tracked: 3,170
+Typos found: 25
+
+Typo rate per 1,000 words
+DATE          WORDS  TYPOS    RATE  CHANGE
+2026-10-01      692     12    17.3       -
+2026-10-08      773      8    10.3    -40%
+2026-10-15      854      4     4.7    -55%
+2026-10-22      851      1     1.2    -75%
+
+Down 93% since 2026-10-01 (17.3 to 1.2 per 1,000 words).
+
+Hall of fame
+#     TYPO              FIX               TOTAL  SNAPSHOTS  LAST SEEN
+1     teh               the                  10          4  2026-10-22
+2     recieve           receive               6          3  2026-10-15
+3     seperate          separate              4          3  2026-10-15
+
+Retired (not in your latest snapshot): recieve (6), seperate (4)
+```
+
+The trend compares each snapshot with the one before it. The hall of fame ranks your most repeated typos across all snapshots. Retired typos showed up in earlier snapshots but not in the latest one. Use `--top N` to change how many entries are listed, 10 by default. Rates from a few hundred words are noisy, so judge progress by the trend over several snapshots.
 
 ## Export formats
 
@@ -206,6 +252,8 @@ The pipeline is a sequence of small, independently testable stages. Each stage t
 | Review | Interactive accept, reject, and edit loop |
 | Store | Saves decisions as JSON between runs |
 | Exporter | Renders Espanso, Vim, and macOS output |
+| History | Saves one snapshot of your typo counts per tracked run |
+| Stats | Computes the trend, hall of fame, and retired typos |
 
 ## Tech stack
 
@@ -224,7 +272,8 @@ The pipeline is a sequence of small, independently testable stages. Each stage t
 | Similarity | Text::Levenshtein, plus adjacent-swap handling |
 | Keyboard model | Built-in QWERTY, AZERTY, and QWERTZ key geometry |
 | Unicode | Unicode::Normalize |
-| Storage | JSON::PP |
+| Storage | JSON::PP for decisions and history |
+| Dates | POSIX and Time::Local |
 | Testing | Test::More with prove |
 | Dependencies | cpanm with cpanfile |
 
@@ -241,6 +290,8 @@ lib/Typo/Fossils/Keyboard.pm    key layouts, adjacency, and slip or gap labels
 lib/Typo/Fossils/Review.pm      interactive accept, reject, edit loop
 lib/Typo/Fossils/Store.pm       saved decisions file
 lib/Typo/Fossils/Exporter.pm    Espanso, Vim, and macOS renderers
+lib/Typo/Fossils/History.pm     snapshot storage and date handling
+lib/Typo/Fossils/Stats.pm       trend, hall of fame, and report
 t/                              test suite
 assets/                         logo and architecture diagram
 cpanfile                        dependency manifest
@@ -256,8 +307,8 @@ cpanfile                        dependency manifest
 - [x] Interactive review
 - [x] Espanso, Vim, and macOS exporters
 - [x] Keyboard-adjacency model to separate slips from spelling gaps
-- [ ] Typo history and improvement tracking
-- [ ] Typo hall of fame report
+- [x] Typo history and improvement tracking
+- [x] Typo hall of fame report
 
 ## Contributing
 
