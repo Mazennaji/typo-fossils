@@ -4,7 +4,8 @@ use utf8;
 use Test::More;
 use File::Temp qw(tempdir);
 use File::Spec;
-use Typo::Fossils::Counter qw(count_words count_paths top_words);
+use Typo::Fossils::Counter qw(count_words count_paths count_files top_words);
+use Typo::Fossils::Reader qw(files_since);
 
 my $counts = count_words("the cat the dog the cat teh");
 is_deeply($counts, { the => 3, cat => 2, dog => 1, teh => 1 }, 'counts words');
@@ -42,5 +43,21 @@ is_deeply($from_dir, { alpha => 2, beta => 2, gamma => 1 }, 'walks directories, 
 
 my $single = count_paths(File::Spec->catfile($dir, 'skip.log'));
 is_deeply($single, { ignored => 1, words => 1, here => 1 }, 'explicit files are read regardless of extension');
+
+my $old = File::Spec->catfile($dir, 'a.txt');
+my $new = File::Spec->catfile($dir, 'sub', 'b.md');
+
+is_deeply(count_files($old, $new), { alpha => 2, beta => 2, gamma => 1 }, 'count_files counts exactly the files given');
+is_deeply(count_files($new), { beta => 1, gamma => 1 }, 'and no others');
+is_deeply(count_files(), {}, 'no files, no words');
+
+utime 1_000_000_000, 1_000_000_000, $old or die $!;
+utime 1_800_000_000, 1_800_000_000, $new or die $!;
+
+is_deeply([ files_since(1_500_000_000, $old, $new) ], [ $new ], 'files_since keeps only recently modified files');
+is_deeply([ files_since(0, $old, $new) ], [ $old, $new ], 'an old cutoff keeps everything');
+is_deeply([ files_since(2_000_000_000, $old, $new) ], [], 'a future cutoff keeps nothing');
+is_deeply([ files_since(0, File::Spec->catfile($dir, 'gone.txt')) ], [], 'a missing file is dropped');
+is_deeply([ files_since(1_800_000_000, $new) ], [ $new ], 'a file modified exactly at the cutoff is kept');
 
 done_testing;
