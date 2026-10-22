@@ -10,6 +10,7 @@ typo-fossils reads your own writing, finds the misspellings you repeat, and expo
 ![CLI](https://img.shields.io/badge/Interface-CLI-1f2937?style=for-the-badge)
 ![Status](https://img.shields.io/badge/Status-Early%20Development-f59e0b?style=for-the-badge)
 ![Tests](https://img.shields.io/badge/Tests-prove-22c55e?style=for-the-badge&logo=perl&logoColor=white)
+![CI](https://github.com/Mazennaji/typo-fossils/actions/workflows/ci.yml/badge.svg)
 
 ![Espanso](https://img.shields.io/badge/Export-Espanso-8b5cf6?style=for-the-badge)
 ![Vim](https://img.shields.io/badge/Export-Vim-019733?style=for-the-badge&logo=vim&logoColor=white)
