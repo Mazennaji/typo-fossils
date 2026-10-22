@@ -7,7 +7,7 @@ use Exporter 'import';
 use Typo::Fossils::Tokenizer qw(tokenize);
 use Typo::Fossils::Reader qw(find_files read_file);
 
-our @EXPORT_OK = qw(count_words count_paths top_words);
+our @EXPORT_OK = qw(count_words count_files count_paths top_words);
 
 sub count_words {
     my ($text, $counts) = @_;
@@ -16,11 +16,16 @@ sub count_words {
     return $counts;
 }
 
+sub count_files {
+    my (@files) = @_;
+    my $counts = {};
+    count_words(read_file($_), $counts) for @files;
+    return $counts;
+}
+
 sub count_paths {
     my (@paths) = @_;
-    my $counts = {};
-    count_words(read_file($_), $counts) for find_files(@paths);
-    return $counts;
+    return count_files(find_files(@paths));
 }
 
 sub top_words {
