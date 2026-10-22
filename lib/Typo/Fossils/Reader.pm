@@ -7,7 +7,7 @@ use Exporter 'import';
 use File::Find ();
 use Encode qw(decode FB_DEFAULT);
 
-our @EXPORT_OK = qw(find_files read_file);
+our @EXPORT_OK = qw(find_files files_since read_file);
 
 sub find_files {
     my (@paths) = @_;
@@ -35,6 +35,14 @@ sub find_files {
     }
 
     return sort @files;
+}
+
+sub files_since {
+    my ($epoch, @files) = @_;
+    return grep {
+        my $mtime = (stat $_)[9];
+        defined $mtime && $mtime >= $epoch;
+    } @files;
 }
 
 sub read_file {
