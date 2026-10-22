@@ -6,11 +6,14 @@ use FindBin qw($Bin);
 use lib "$Bin/../lib";
 use Getopt::Long qw(GetOptions GetOptionsFromArray);
 use Typo::Fossils;
-use Typo::Fossils::Counter qw(count_paths top_words);
+use Typo::Fossils::Counter qw(count_paths count_files top_words);
 use Typo::Fossils::Detector qw(detect);
 use Typo::Fossils::Exporter qw(export_pairs supported_formats infer_format write_output);
+use Typo::Fossils::History qw(parse_date today);
 use Typo::Fossils::Keyboard qw(supported_layouts);
+use Typo::Fossils::Reader qw(find_files files_since);
 use Typo::Fossils::Review qw(review);
+use Typo::Fossils::Stats qw(typo_total rate report commify);
 use Typo::Fossils::Store;
 
 binmode STDIN,  ':encoding(UTF-8)';
@@ -25,6 +28,9 @@ Usage:
   typo-fossils review [--store FILE] [scan options] PATH...
   typo-fossils list [--store FILE]
   typo-fossils export [--format espanso|vim|macos] [--out FILE] [--store FILE]
+  typo-fossils track [--date YYYY-MM-DD] [--since YYYY-MM-DD]
+                     [--store FILE] [--history FILE] PATH...
+  typo-fossils stats [--history FILE] [--top N]
 
 Scan options:
   --top N            show at most N candidates (default 50)
@@ -88,7 +94,7 @@ sub find_candidates {
     return @found;
 }
 
-my $command = (@ARGV && $ARGV[0] =~ /^(?:freq|scan|review|list|export)\z/) ? shift @ARGV : '';
+my $command = (@ARGV && $ARGV[0] =~ /^(?:freq|scan|review|list|export|track|stats)\z/) ? shift @ARGV : '';
 
 if ($command eq 'freq') {
     my ($top, $min_count) = (50, 1);
@@ -187,6 +193,73 @@ if ($command eq 'export') {
     else {
         print $text;
     }
+    exit 0;
+}
+
+if ($command eq 'track') {
+    my ($date, $since, $store_path, $history_path);
+    GetOptionsFromArray(
+        \@ARGV,
+        'date=s'    => \$date,
+        'since=s'   => \$since,
+        'store=s'   => \$store_path,
+        'history=s' => \$history_path,
+    ) or die $usage;
+    die $usage unless @ARGV;
+
+    $date //= today();
+    die "Invalid date '$date'. Use YYYY-MM-DD.\n" unless defined parse_date($date);
+
+    my $since_epoch;
+    if (defined $since) {
+        $since_epoch = parse_date($since);
+        die "Invalid date '$since'. Use YYYY-MM-DD.\n" unless defined $since_epoch;
+    }
+
+    my %pairs = Typo::Fossils::Store->new($store_path)->accepted;
+    if (!%pairs) {
+        print STDERR "No accepted typos yet. Run typo-fossils review first.\n";
+        exit 1;
+    }
+
+    my @files = find_files(@ARGV);
+    @files = files_since($since_epoch, @files) if defined $since_epoch;
+
+    my $counts = count_files(@files);
+    my $words  = 0;
+    $words += $_ for values %$counts;
+
+    if (!$words) {
+        print STDERR "No words found. Check the paths" . (defined $since ? ' and --since' : '') . ".\n";
+        exit 1;
+    }
+
+    my %found = map { $_ => +{ fix => $pairs{$_}, count => $counts->{$_} } }
+                grep { $counts->{$_} } keys %pairs;
+
+    my $history  = Typo::Fossils::History->new($history_path);
+    my $verb     = $history->has_date($date) ? 'Updated' : 'Recorded';
+    my $snapshot = $history->record(date => $date, words => $words, typos => \%found);
+    $history->save;
+
+    my $total = typo_total($snapshot);
+    printf "%s %s: %s words, %d %s (%.1f per 1,000 words).\n",
+        $verb, $date, commify($words), $total, ($total == 1 ? 'typo' : 'typos'), rate($snapshot);
+    exit 0;
+}
+
+if ($command eq 'stats') {
+    my ($history_path, $top) = (undef, 10);
+    GetOptionsFromArray(
+        \@ARGV,
+        'history=s' => \$history_path,
+        'top=i'     => \$top,
+    ) or die $usage;
+    die $usage if @ARGV;
+    die "--top must be at least 1.\n" if $top < 1;
+
+    my @snapshots = Typo::Fossils::History->new($history_path)->snapshots;
+    print report(\@snapshots, top => $top);
     exit 0;
 }
 
