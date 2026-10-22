@@ -7,7 +7,9 @@ requires 'FindBin';
 requires 'Getopt::Long';
 requires 'JSON::PP';
 requires 'List::Util';
+requires 'POSIX';
 requires 'Text::Levenshtein';
+requires 'Time::Local';
 requires 'Unicode::Normalize';
 
 on 'test' => sub {
