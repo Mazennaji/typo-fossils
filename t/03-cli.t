@@ -121,4 +121,58 @@ is($? >> 8, 0, 'export succeeds when only some entries are skipped');
 like($skipped, qr/Skipped 1 entry the vim format cannot hold: wouldn't/, 'export reports skipped entries');
 like($skipped, qr/^iabbrev teh the$/m, 'and still exports the rest');
 
+my $history = File::Spec->catfile($dir, 'history.json');
+
+my $no_history = qx{$^X $script stats --history $history};
+is($? >> 8, 0, 'stats exits cleanly without a history');
+like($no_history, qr/No history yet\. Run typo-fossils track PATH first\./, 'and says how to start');
+
+my $tracked = qx{$^X $script track --store $store --history $history --date 2026-10-01 $typos};
+is($? >> 8, 0, 'track exits cleanly');
+like($tracked, qr/^Recorded 2026-10-01: 11 words, 1 typo \(90\.9 per 1,000 words\)\.$/m, 'track reports the snapshot');
+ok(-f $history, 'track writes the history file');
+
+my $retracked = qx{$^X $script track --store $store --history $history --date 2026-10-01 $typos};
+like($retracked, qr/^Updated 2026-10-01: 11 words, 1 typo/m, 'tracking the same date again updates it');
+
+my $recent = qx{$^X $script track --store $store --history $history --date 2026-10-02 --since 2000-01-01 $typos};
+is($? >> 8, 0, 'track accepts --since');
+like($recent, qr/^Recorded 2026-10-02: 11 words/m, 'and includes files modified since then');
+
+my $clean = File::Spec->catfile($dir, 'clean.txt');
+open my $cfh, '>', $clean or die $!;
+print {$cfh} join(' ', ('receive') x 20), "\n";
+close $cfh;
+
+my $improved = qx{$^X $script track --store $store --history $history --date 2026-10-15 $clean};
+like($improved, qr/^Recorded 2026-10-15: 20 words, 0 typos \(0\.0 per 1,000 words\)\.$/m, 'a clean snapshot has no typos');
+
+my $stats = qx{$^X $script stats --history $history};
+is($? >> 8, 0, 'stats exits cleanly');
+like($stats, qr/^Snapshots: 3 \(2026-10-01 to 2026-10-15\)$/m, 'stats counts the snapshots');
+like($stats, qr/^2026-10-15\s+20\s+0\s+0\.0\s+-100%$/m, 'stats shows the trend');
+like($stats, qr/^Down 100% since 2026-10-01 \(90\.9 to 0\.0 per 1,000 words\)\.$/m, 'and the headline');
+like($stats, qr/^1\s+recieve\s+receive\s+2\s+2\s+2026-10-02$/m, 'and the hall of fame');
+like($stats, qr/^Retired \(not in your latest snapshot\): recieve \(2\)$/m, 'and the retired typos');
+
+my $top_zero = qx{$^X $script stats --history $history --top 0 2>&1};
+isnt($? >> 8, 0, 'stats rejects --top below 1');
+like($top_zero, qr/--top must be at least 1\./, 'and says why');
+
+my $bad_date = qx{$^X $script track --store $store --history $history --date 2026-02-30 $typos 2>&1};
+isnt($? >> 8, 0, 'track rejects an invalid date');
+like($bad_date, qr/Invalid date '2026-02-30'\. Use YYYY-MM-DD\./, 'and explains the format');
+
+my $bad_since = qx{$^X $script track --store $store --history $history --since nope $typos 2>&1};
+isnt($? >> 8, 0, 'track rejects an invalid --since');
+like($bad_since, qr/Invalid date 'nope'\. Use YYYY-MM-DD\./, 'and explains the format');
+
+my $nothing = qx{$^X $script track --store $store --history $history --since 2999-01-01 $typos 2>&1};
+is($? >> 8, 1, 'track with no matching files exits with status 1');
+like($nothing, qr/No words found\. Check the paths and --since\./, 'and says why');
+
+my $no_pairs = qx{$^X $script track --store $missing --history $history $typos 2>&1};
+is($? >> 8, 1, 'track with nothing accepted exits with status 1');
+like($no_pairs, qr/No accepted typos yet\. Run typo-fossils review first\./, 'and says why');
+
 done_testing;
