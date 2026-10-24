@@ -1,0 +1,161 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 872" width="1600" height="872" role="img" aria-labelledby="title desc">
+  <title id="title">typo-fossils architecture</title>
+  <desc id="desc">Three lanes. Find typos: your writing flows through Reader, Tokenizer, Counter, Detector, Keyboard and Review. Use them: accepted decisions go to Store, then Exporter, which writes Espanso, Vim and macOS output. Measure progress: new writing and accepted typos feed Counter, then History, then Stats.</desc>
+  <defs>
+    <marker id="head" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#39457E"/>
+    </marker>
+    <style>
+      text { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; fill: #39457E; text-anchor: middle; }
+      .lane { fill: #F7F8FD; stroke: #D5DAF0; stroke-width: 1.5; }
+      .lane-title { font-size: 22px; font-weight: 700; text-anchor: start; }
+      .box { fill: #39457E; }
+      .box text { fill: #FFFFFF; }
+      .tint { fill: #E4E8FA; stroke: #A9B3E6; stroke-width: 1.5; }
+      .hot { fill: #FFFFFF; stroke: #F59E0B; stroke-width: 3.5; }
+      .t { font-size: 20px; font-weight: 700; }
+      .s { font-size: 13px; }
+      .o { font-size: 16px; font-weight: 700; }
+      .tint-text { fill: #39457E; }
+      .link { fill: none; stroke: #39457E; stroke-width: 2.2; }
+      .note { font-size: 13px; }
+    </style>
+  </defs>
+
+  <rect width="1600" height="872" rx="16" fill="#FFFFFF"/>
+
+  <rect class="lane" x="40" y="30" width="1520" height="200" rx="14"/>
+  <rect class="lane" x="40" y="250" width="1520" height="220" rx="14"/>
+  <rect class="lane" x="40" y="490" width="1520" height="280" rx="14"/>
+
+  <text class="lane-title" x="66" y="64">Find typos</text>
+  <text class="lane-title" x="66" y="284">Use them</text>
+  <text class="lane-title" x="66" y="524">Measure progress</text>
+
+  <g>
+    <rect class="tint" x="66" y="100" width="176" height="80" rx="12"/>
+    <text class="t" x="154" y="136">Your writing</text>
+    <text class="s" x="154" y="158">.txt and .md files</text>
+  </g>
+  <g class="box">
+    <rect x="278" y="100" width="176" height="80" rx="12"/>
+    <text class="t" x="366" y="136">Reader</text>
+    <text class="s" x="366" y="158">finds and reads files</text>
+  </g>
+  <g class="box">
+    <rect x="490" y="100" width="176" height="80" rx="12"/>
+    <text class="t" x="578" y="136">Tokenizer</text>
+    <text class="s" x="578" y="158">normalize, split words</text>
+  </g>
+  <g class="box">
+    <rect x="702" y="100" width="176" height="80" rx="12"/>
+    <text class="t" x="790" y="136">Counter</text>
+    <text class="s" x="790" y="158">word frequencies</text>
+  </g>
+  <g class="box">
+    <rect x="914" y="100" width="176" height="80" rx="12"/>
+    <text class="t" x="1002" y="136">Detector</text>
+    <text class="s" x="1002" y="158">edit distance, confidence</text>
+  </g>
+  <g>
+    <rect class="hot" x="1126" y="100" width="176" height="80" rx="12"/>
+    <text class="t" x="1214" y="136">Keyboard</text>
+    <text class="s" x="1214" y="158">slip or gap label</text>
+  </g>
+  <g class="box">
+    <rect x="1338" y="100" width="176" height="80" rx="12"/>
+    <text class="t" x="1426" y="136">Review</text>
+    <text class="s" x="1426" y="158">accept, reject, edit</text>
+  </g>
+
+  <path class="link" d="M242 140 H278" marker-end="url(#head)"/>
+  <path class="link" d="M454 140 H490" marker-end="url(#head)"/>
+  <path class="link" d="M666 140 H702" marker-end="url(#head)"/>
+  <path class="link" d="M878 140 H914" marker-end="url(#head)"/>
+  <path class="link" d="M1090 140 H1126" marker-end="url(#head)"/>
+  <path class="link" d="M1302 140 H1338" marker-end="url(#head)"/>
+
+  <path class="link" d="M1426 180 V330" marker-end="url(#head)"/>
+
+  <g class="box">
+    <rect x="1338" y="330" width="176" height="80" rx="12"/>
+    <text class="t" x="1426" y="366">Store</text>
+    <text class="s" x="1426" y="388">decisions.json</text>
+  </g>
+  <g class="box">
+    <rect x="1090" y="330" width="176" height="80" rx="12"/>
+    <text class="t" x="1178" y="366">Exporter</text>
+    <text class="s" x="1178" y="388">renders snippets</text>
+  </g>
+
+  <path class="link" d="M1338 370 H1266" marker-end="url(#head)"/>
+
+  <g>
+    <rect class="tint" x="820" y="286" width="190" height="48" rx="10"/>
+    <text class="o" x="915" y="315">Espanso YAML</text>
+  </g>
+  <g>
+    <rect class="tint" x="820" y="346" width="190" height="48" rx="10"/>
+    <text class="o" x="915" y="375">Vim abbreviations</text>
+  </g>
+  <g>
+    <rect class="tint" x="820" y="406" width="190" height="48" rx="10"/>
+    <text class="o" x="915" y="435">macOS plist</text>
+  </g>
+
+  <path class="link" d="M1090 370 H1050"/>
+  <path class="link" d="M1050 310 V430"/>
+  <path class="link" d="M1050 310 H1010" marker-end="url(#head)"/>
+  <path class="link" d="M1050 370 H1010" marker-end="url(#head)"/>
+  <path class="link" d="M1050 430 H1010" marker-end="url(#head)"/>
+
+  <path class="link" d="M1426 410 V550 H401 V620" marker-end="url(#head)"/>
+  <text class="note" x="914" y="541">accepted typos</text>
+
+  <g>
+    <rect class="tint" x="66" y="620" width="190" height="80" rx="12"/>
+    <text class="t" x="161" y="656">New writing</text>
+    <text class="s" x="161" y="678">files since a date</text>
+  </g>
+  <g class="box">
+    <rect x="306" y="620" width="190" height="80" rx="12"/>
+    <text class="t" x="401" y="656">Counter</text>
+    <text class="s" x="401" y="678">counts accepted typos</text>
+  </g>
+  <g class="box">
+    <rect x="546" y="620" width="190" height="80" rx="12"/>
+    <text class="t" x="641" y="656">History</text>
+    <text class="s" x="641" y="678">history.json snapshots</text>
+  </g>
+  <g class="box">
+    <rect x="786" y="620" width="190" height="80" rx="12"/>
+    <text class="t" x="881" y="656">Stats</text>
+    <text class="s" x="881" y="678">trend and rankings</text>
+  </g>
+
+  <path class="link" d="M256 660 H306" marker-end="url(#head)"/>
+  <path class="link" d="M496 660 H546" marker-end="url(#head)"/>
+  <path class="link" d="M736 660 H786" marker-end="url(#head)"/>
+
+  <path class="link" d="M976 660 H1016"/>
+  <path class="link" d="M1016 600 V720"/>
+  <path class="link" d="M1016 600 H1056" marker-end="url(#head)"/>
+  <path class="link" d="M1016 660 H1056" marker-end="url(#head)"/>
+  <path class="link" d="M1016 720 H1056" marker-end="url(#head)"/>
+
+  <g>
+    <rect class="tint" x="1056" y="576" width="200" height="48" rx="10"/>
+    <text class="o" x="1156" y="605">Typo rate trend</text>
+  </g>
+  <g>
+    <rect class="tint" x="1056" y="636" width="200" height="48" rx="10"/>
+    <text class="o" x="1156" y="665">Hall of fame</text>
+  </g>
+  <g>
+    <rect class="tint" x="1056" y="696" width="200" height="48" rx="10"/>
+    <text class="o" x="1156" y="725">Retired typos</text>
+  </g>
+
+  <rect class="tint" x="40" y="790" width="1520" height="52" rx="12"/>
+  <text class="s" x="800" y="822" style="font-size:15px">Everything runs locally on your machine. Your text never leaves it.</text>
+</svg>

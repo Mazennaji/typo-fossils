@@ -239,7 +239,7 @@ A property list of phrase and shortcut pairs that can be imported into System Se
 
 ## Architecture
 
-![System architecture](assets/architecture.png)
+![System architecture](assets/architecture.svg)
 
 The pipeline is a sequence of small, independently testable stages. Each stage takes plain Perl data structures in and returns them out, so stages can be tested in isolation and swapped without touching the rest.
 
