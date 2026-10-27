@@ -10,7 +10,8 @@ typo-fossils reads your own writing, finds the misspellings you repeat, and expo
 ![CLI](https://img.shields.io/badge/Interface-CLI-1f2937?style=for-the-badge)
 ![Status](https://img.shields.io/badge/Status-Early%20Development-f59e0b?style=for-the-badge)
 ![Tests](https://img.shields.io/badge/Tests-prove-22c55e?style=for-the-badge&logo=perl&logoColor=white)
-![CI](https://github.com/Mazennaji/typo-fossils/actions/workflows/ci.yml/badge.svg)
+![CI](https://img.shields.io/github/actions/workflow/status/Mazennaji/typo-fossils/ci.yml?style=for-the-badge&label=CI)
+![License](https://img.shields.io/badge/License-MIT-6366f1?style=for-the-badge)
 
 ![Espanso](https://img.shields.io/badge/Export-Espanso-8b5cf6?style=for-the-badge)
 ![Vim](https://img.shields.io/badge/Export-Vim-019733?style=for-the-badge&logo=vim&logoColor=white)
@@ -40,10 +41,32 @@ Most people misspell the same 20 to 30 words over and over. Built-in autocorrect
 7. **Export.** Write the accepted pairs in the format your tool expects.
 8. **Track.** Record how often you still make the accepted typos, and watch the rate fall.
 
-## Quick start
+## Install
+
+typo-fossils needs Perl 5.20 or newer and one module that does not ship with Perl, `Text::Levenshtein`. Everything else is part of core Perl.
+
+```
+git clone https://github.com/Mazennaji/typo-fossils.git
+cd typo-fossils
+```
+
+Then install the dependency with either route.
+
+On Debian or Ubuntu:
+
+```
+sudo apt-get install -y libtext-levenshtein-perl
+```
+
+On any system with `cpanm`:
 
 ```
 cpanm --installdeps .
+```
+
+## Quick start
+
+```
 prove -l t
 perl bin/typo-fossils --version
 ```
@@ -295,6 +318,7 @@ lib/Typo/Fossils/History.pm     snapshot storage and date handling
 lib/Typo/Fossils/Stats.pm       trend, hall of fame, and report
 t/                              test suite
 assets/                         logo and architecture diagram
+.github/workflows/ci.yml        runs the tests on every push and pull request
 cpanfile                        dependency manifest
 ```
 
@@ -310,7 +334,12 @@ cpanfile                        dependency manifest
 - [x] Keyboard-adjacency model to separate slips from spelling gaps
 - [x] Typo history and improvement tracking
 - [x] Typo hall of fame report
+- [x] Continuous integration on GitHub Actions
 
 ## Contributing
 
 Issues and pull requests are welcome. Run `prove -l t` before submitting and keep each change focused on one stage of the pipeline.
+
+## License
+
+Released under the [MIT License](LICENSE). Copyright (c) 2026 Mazen Naji.
